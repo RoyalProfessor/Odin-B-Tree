@@ -27,7 +27,7 @@ main :: proc() {
     ok = insert_entry_into_tree(58, &tree)
     ok = insert_entry_into_tree(885, &tree)
     // fmt.println(ok)
-    // print_tree(tree)
+    print_tree(tree)
     // fmt.println(tree)
 }
 
@@ -50,12 +50,12 @@ Node :: struct {
 create_tree :: proc(size: int) -> (tree: B_Tree) {
     node := Node{}
     node.size, tree.size = size, size
-    node.id = 1
+    node.id = 0
     node.parent = -1
     reserve(&node.values, size)
     reserve(&node.children, size)
     tree.parent = 0
-    tree.generation = 2
+    tree.generation = 1
     append(&tree.nodes, node)
     return
 }
@@ -136,15 +136,15 @@ check_node_size :: proc(node_i: int, tree: B_Tree) -> (bool) {
 }
 
 split_node :: proc(node_i: int, tree: ^B_Tree) {
-    node := &tree.nodes[node_i]
     new_node_i := create_node(tree)
-    new_node := &tree.nodes[new_node_i]
-    if node.parent == -1 {
+    if tree.nodes[node_i].parent == -1 {
         parent_node_i := create_node(tree)
         tree.nodes[parent_node_i].parent = -1
         tree.parent = parent_node_i
-        node.parent = parent_node_i
+        tree.nodes[node_i].parent = parent_node_i
     }
+    node := &tree.nodes[node_i]
+    new_node := &tree.nodes[new_node_i]
     parent := &tree.nodes[node.parent]
     new_node.parent = node.parent
     v_index := (len(node.values) / 2)
@@ -172,16 +172,15 @@ split_node :: proc(node_i: int, tree: ^B_Tree) {
         resize(&node.children, child_index)
     }
 
-    if node.id == 8 || new_node.id == 8 || parent.id == 8 {
-        fmt.println("Tree:", tree.nodes)
-        fmt.println("Parent - Index:", node.parent, parent)
-        fmt.println("Node - Index:", node_i, node)
-        fmt.println("New Node - Index:", new_node_i, new_node)
-        // fmt.println("Parent - Index:", node.parent, parent, "Node - Id", parent.id, "Index:", node_i, node.values, "New Node - Id:", new_node.id, "Index:", new_node_i, new_node.values)
-    }
+    // if node.id == 8 || new_node.id == 8 || parent.id == 8 {
+    //     fmt.println("Tree:", tree.nodes)
+    //     fmt.println("Parent - Index:", node.parent, parent)
+    //     fmt.println("Node - Index:", node_i, node)
+    //     fmt.println("New Node - Index:", new_node_i, new_node)
+    //     // fmt.println("Parent - Index:", node.parent, parent, "Node - Id", parent.id, "Index:", node_i, node.values, "New Node - Id:", new_node.id, "Index:", new_node_i, new_node.values)
+    // }
 
-    ref_parent := tree.nodes[node.parent]
-    if check_node_balance(ref_parent) == .Overflow {
+    if check_node_balance(parent^) == .Overflow {
         split_node(node.parent, tree)
     }
 }
