@@ -85,7 +85,7 @@ create_node :: proc{create_node_raw, create_node_tree}
 
 insert_entry_into_tree :: proc(value: int, tree: ^B_Tree) -> (bool) {
     node_i, ok := insert_entry_into_node(value, tree.parent, tree)
-    if check_node_size(node_i, tree^) == true {
+    if check_node_balance(tree.nodes[node_i]) == .Overflow {
         split_node(node_i, tree)
     }
     return ok
@@ -128,13 +128,6 @@ insert_entry_into_node :: proc(value, node_i: int, tree: ^B_Tree) -> (inserted_n
     return -1, false
 }
 
-check_node_size :: proc(node_i: int, tree: B_Tree) -> (bool) {
-    if len(tree.nodes[node_i].values) > tree.size {
-        return true
-    }
-    return false
-}
-
 split_node :: proc(node_i: int, tree: ^B_Tree) {
     new_node_i := create_node(tree)
     if tree.nodes[node_i].parent == -1 {
@@ -151,7 +144,6 @@ split_node :: proc(node_i: int, tree: ^B_Tree) {
     append(&parent.values, node.values[v_index])
     slice.sort(parent.values[:])
     append(&new_node.values, ..node.values[v_index+1:])
-    // slice.sort(node.values[:])
     resize(&node.values, v_index)
     
     if !slice.contains(parent.children[:], node_i) {
@@ -171,14 +163,6 @@ split_node :: proc(node_i: int, tree: ^B_Tree) {
         sort_children(new_node, tree)
         resize(&node.children, child_index)
     }
-
-    // if node.id == 8 || new_node.id == 8 || parent.id == 8 {
-    //     fmt.println("Tree:", tree.nodes)
-    //     fmt.println("Parent - Index:", node.parent, parent)
-    //     fmt.println("Node - Index:", node_i, node)
-    //     fmt.println("New Node - Index:", new_node_i, new_node)
-    //     // fmt.println("Parent - Index:", node.parent, parent, "Node - Id", parent.id, "Index:", node_i, node.values, "New Node - Id:", new_node.id, "Index:", new_node_i, new_node.values)
-    // }
 
     if check_node_balance(parent^) == .Overflow {
         split_node(node.parent, tree)
@@ -200,9 +184,9 @@ sort_children :: proc(node: ^Node, tree: ^B_Tree) {
             total = 0
             child_node := &tree.nodes[node.children[i]]
             for k in 0..<len(child_node.values) {
-                total += tree.nodes[node.children[i]].values[k]
+                total += child_node.values[k]
             }
-            total = total / len(node.children)
+            total = total / len(child_node.values)
             append(&averages, Vector2{i, total})
         }
     }
